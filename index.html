@@ -818,7 +818,7 @@ async function initAgora(roomId, type) {
     const uid = Math.floor(Math.random() * 100000);
 
     // الدخول للغرفة — token=null لـ Testing Mode
-    await agoraClient.join(AGORA_APP_ID, roomId, null, uid);
+    await agoraClient.join(AGORA_APP_ID, roomId, e8b8a45c9806440bb11ce34b3bfc53b4, uid);
 
     // تشغيل الميكروفون دائماً
     localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
