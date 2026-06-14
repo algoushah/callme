@@ -442,7 +442,8 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 // ═══════════════════════════════════════════
 // CONFIG — Agora
 // ═══════════════════════════════════════════
-const AGORA_APP_ID = '6d3dc26748c546cd86766afb0d1a9c65';
+const AGORA_APP_ID    = '6d3dc26748c546cd86766afb0d1a9c65';
+const AGORA_TOKEN_URL = 'https://agora-token.a-y-o-u-b.workers.dev';
 
 // ═══════════════════════════════════════════
 // STATE
@@ -781,6 +782,14 @@ function toggleCam() {
 // ═══════════════════════════════════════════
 // AGORA — الصوت والفيديو
 // ═══════════════════════════════════════════
+async function getAgoraToken(roomId, uid) {
+  const res = await fetch(`${AGORA_TOKEN_URL}?channel=${encodeURIComponent(roomId)}&uid=${uid}`);
+  if (!res.ok) throw new Error('فشل جلب التوكن من الـ Worker');
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.token;
+}
+
 async function initAgora(roomId, type) {
   try {
     // إنشاء Client
@@ -792,7 +801,6 @@ async function initAgora(roomId, type) {
       await agoraClient.subscribe(user, mediaType);
 
       if (mediaType === 'video') {
-        // إخفاء placeholder وعرض الفيديو
         const ph = $('remote-placeholder');
         if (ph) ph.style.display = 'none';
         user.videoTrack.play('remote-vid');
@@ -817,8 +825,12 @@ async function initAgora(roomId, type) {
     // UID عشوائي رقمي
     const uid = Math.floor(Math.random() * 100000);
 
-    // الدخول للغرفة — token=null لـ Testing Mode
-    await agoraClient.join(AGORA_APP_ID, roomId, e8b8a45c9806440bb11ce34b3bfc53b4, uid);
+    // جلب التوكن من Cloudflare Worker
+    toast('🔐 جاري جلب التوكن...', 3000);
+    const token = await getAgoraToken(roomId, uid);
+
+    // الدخول للغرفة بالتوكن
+    await agoraClient.join(AGORA_APP_ID, roomId, token, uid);
 
     // تشغيل الميكروفون دائماً
     localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
